@@ -22,8 +22,8 @@ public class Physics {
     double normalY = dy / distance;
 
     // Step 3: Project the velocities onto the normal vector
-    double p1 = a.getVx() * normalX + a.getVx() * normalY;
-    double p2 = b.getVx() * normalX + b.getVx() * normalY;
+    double p1 = a.getVx() * normalX + a.getVy() * normalY;
+    double p2 = b.getVx() * normalX + b.getVy() * normalY;
 
     // Step 4: Use the 1D elastic collision formula to find the new velocities along
     // the normal

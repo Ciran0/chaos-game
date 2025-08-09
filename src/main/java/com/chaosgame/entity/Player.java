@@ -11,7 +11,7 @@ public class Player extends Entity {
   private static final double ACCELERATION = 800; // How fast the player speeds up
   private static final double MAX_SPEED = 350; // The player's top speed
   private static final double DAMPING = 0.96; // Friction for the player (closer to 1 = less friction)
-  private static final double DASH_IMPULSE = 900; // An instant velocity boost
+  private static final double DASH_IMPULSE = 1500; // An instant velocity boost
 
   // --- Dash State ---
   private static final double DASH_COOLDOWN = 1.0;
