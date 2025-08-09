@@ -1,5 +1,6 @@
 package com.chaosgame.entity;
 
+import com.chaosgame.Vector2D;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -22,9 +23,18 @@ public class Player extends Entity {
   private double inputAy = 0; // Acceleration from input on Y axis
 
   public Player(int x, int y) {
-    super(new Circle(15, Color.WHITE), 10.0, 15.0);
+    super(new Circle(15, Color.WHITE), 10.0, createCircleVertices(15, 8));
     this.x = x;
     this.y = y;
+  }
+
+  private static Vector2D[] createCircleVertices(double radius, int sides) {
+    Vector2D[] vertices = new Vector2D[sides];
+    for (int i = 0; i < sides; i++) {
+      double angle = 2 * Math.PI * i / sides;
+      vertices[i] = new Vector2D(radius * Math.cos(angle), radius * Math.sin(angle));
+    }
+    return vertices;
   }
 
   public void handleInput(Set<KeyCode> keys) {

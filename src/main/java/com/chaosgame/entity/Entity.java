@@ -1,30 +1,27 @@
 package com.chaosgame.entity;
 
+import com.chaosgame.Vector2D;
 import javafx.scene.Node;
 
-/**
- * The base class for all game objects (Player, Crates, Guards, etc.).
- * It handles position, velocity, and the visual representation.
- */
 public abstract class Entity {
-  // Game state
-  protected double x, y; // Position
+  public double x, y; // Position
   protected double vx, vy; // Velocity
 
   private static final double GLOBAL_FRICTION = 0.98;
 
   public double mass;
-  public double radius;
+  // We no longer use a single radius. Instead, we have vertices.
+  protected Vector2D[] vertices;
 
-  // Visual representation
   protected Node view;
 
-  public Entity(Node view, double mass, double radius) {
+  public Entity(Node view, double mass, Vector2D[] vertices) {
     this.view = view;
     this.mass = mass;
-    this.radius = radius;
+    this.vertices = vertices;
   }
 
+  // Getters and Setters
   public double getX() {
     return x;
   }
@@ -45,32 +42,29 @@ public abstract class Entity {
     return vx;
   }
 
-  public double getVy() {
-    return vy;
-  }
-
-  // SETTERS - To allow other classes to WRITE these values
   public void setVx(double vx) {
     this.vx = vx;
+  }
+
+  public double getVy() {
+    return vy;
   }
 
   public void setVy(double vy) {
     this.vy = vy;
   }
 
-  // This method will be called on every frame by the game loop
-  public void update(double delta) {
+  public Vector2D[] getVertices() {
+    return vertices;
+  }
 
+  public void update(double delta) {
     if (!(this instanceof Player)) {
       vx *= GLOBAL_FRICTION;
       vy *= GLOBAL_FRICTION;
     }
-
-    // Move the entity based on its velocity and time passed
     x += vx * delta;
     y += vy * delta;
-
-    // Update the visual node's position
     view.setTranslateX(x);
     view.setTranslateY(y);
   }
