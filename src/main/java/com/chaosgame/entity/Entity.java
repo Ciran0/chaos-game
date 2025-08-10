@@ -10,15 +10,15 @@ public abstract class Entity {
   private static final double GLOBAL_FRICTION = 0.98;
 
   public double mass;
-  // We no longer use a single radius. Instead, we have vertices.
   protected Vector2D[] vertices;
-
+  public boolean isPhysical;
   protected Node view;
 
   public Entity(Node view, double mass, Vector2D[] vertices) {
     this.view = view;
     this.mass = mass;
     this.vertices = vertices;
+    this.isPhysical = true;
   }
 
   // Getters and Setters

@@ -3,6 +3,7 @@ package com.chaosgame.view;
 import com.chaosgame.ViewManager;
 import com.chaosgame.entity.Entity;
 import com.chaosgame.entity.Player;
+import com.chaosgame.entity.Hand;
 import com.chaosgame.entity.Crate;
 import com.chaosgame.Physics;
 import com.chaosgame.Vector2D;
@@ -20,6 +21,10 @@ import java.util.Set;
 public class GameView {
   private Scene scene;
   private Pane root; // The root pane where we will draw our game
+
+  private double mouseX = 0;
+  private double mouseY = 0;
+
   private ViewManager viewManager;
   private AnimationTimer gameLoop;
   private long lastUpdate = 0;
@@ -40,15 +45,33 @@ public class GameView {
     this.scene = new Scene(root, WIDTH, HEIGHT);
     // We will add key listeners and the game loop here
 
-    this.player = new Player(WIDTH / 2, HEIGHT / 2);
-    addEntity(player);
-
     addEntity(new Crate(200, 200));
     addEntity(new Crate(1000, 500));
     addEntity(new Crate(400, 600));
 
+    Hand hand = new Hand();
+    this.player = new Player(WIDTH / 2, HEIGHT / 2, hand);
+    addEntity(this.player);
+    addEntity(hand);
+
+    scene.setOnMouseMoved(event -> {
+      mouseX = event.getSceneX();
+      mouseY = event.getSceneY();
+    });
+
     scene.setOnKeyPressed(event -> pressedKeys.add(event.getCode()));
     scene.setOnKeyReleased(event -> pressedKeys.remove(event.getCode()));
+
+    scene.setOnMousePressed(event -> {
+      if (event.isPrimaryButtonDown()) {
+        player.startGrabbing();
+      }
+    });
+    scene.setOnMouseReleased(event -> {
+      if (!event.isPrimaryButtonDown()) {
+        player.releaseObject();
+      }
+    });
 
     this.gameLoop = new AnimationTimer() {
       @Override
@@ -78,6 +101,7 @@ public class GameView {
 
   public void update(double delta) {
     player.handleInput(pressedKeys);
+    player.updateHand(mouseX, mouseY);
 
     for (Entity entity : entities) {
       entity.update(delta);
@@ -88,29 +112,53 @@ public class GameView {
   }
 
   private void checkCollisions() {
+
+    // --- GRAB CHECK ---
+    // This part is correct and remains the same
+    if (player.isGrabbing() && !player.isHoldingObject()) {
+      for (Entity entity : entities) {
+        if (entity instanceof Player || !entity.isPhysical)
+          continue;
+
+        Physics.CollisionResult grabResult = Physics.checkCollision(player.getHand(), entity);
+        if (grabResult.isColliding) {
+          player.grabObject(entity);
+          break;
+        }
+      }
+    }
+
+    // --- MAIN COLLISION LOOP ---
     for (int i = 0; i < entities.size(); i++) {
       for (int j = i + 1; j < entities.size(); j++) {
         Entity e1 = entities.get(i);
         Entity e2 = entities.get(j);
 
-        // Use the new SAT-based collision check
+        // --- THE FIX IS HERE ---
+        // 1. Skip this pair if either entity is not physical
+        if (!e1.isPhysical || !e2.isPhysical) {
+          continue;
+        }
+
+        // 2. Skip collision between the player and the object they are holding
+        if (player.isHoldingObject() &&
+            ((e1 == player && e2 == player.getHeldObject()) || (e2 == player && e1 == player.getHeldObject()))) {
+          continue;
+        }
+
         Physics.CollisionResult result = Physics.checkCollision(e1, e2);
 
         if (result.isColliding) {
-          // --- POSITIONAL CORRECTION ---
-          // The MTV tells us exactly how to push them apart
+          // The rest of your collision response logic is correct.
           Vector2D mtv = result.mtv;
           double totalMass = e1.mass + e2.mass;
 
-          // Push e1 away from e2
           e1.setX(e1.getX() - mtv.x * (e2.mass / totalMass));
           e1.setY(e1.getY() - mtv.y * (e2.mass / totalMass));
 
-          // Push e2 away from e1
           e2.setX(e2.getX() + mtv.x * (e1.mass / totalMass));
           e2.setY(e2.getY() + mtv.y * (e1.mass / totalMass));
 
-          // --- VELOCITY RESPONSE (using your original formula, now more stable) ---
           handleCollisionVelocity(e1, e2);
         }
       }

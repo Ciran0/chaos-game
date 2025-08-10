@@ -1,12 +1,19 @@
 package com.chaosgame.entity;
 
 import com.chaosgame.Vector2D;
+import com.chaosgame.entity.Hand;
+
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import java.util.Set;
 
 public class Player extends Entity {
+
+  private Hand hand;
+  private static final double HAND_ORBIT_RADIUS = 30;
+  private boolean isGrabbing = false;
+  private Entity heldObject = null;
 
   // --- New Physics Constants ---
   private static final double ACCELERATION = 2000; // How fast the player speeds up
@@ -25,10 +32,75 @@ public class Player extends Entity {
   private double inputAx = 0; // Acceleration from input on X axis
   private double inputAy = 0; // Acceleration from input on Y axis
 
-  public Player(int x, int y) {
+  public Player(int x, int y, Hand hand) {
     super(new Circle(15, Color.WHITE), 10.0, createCircleVertices(15, 8));
     this.x = x;
     this.y = y;
+    this.hand = hand;
+  }
+
+  public Hand getHand() {
+    return this.hand;
+  }
+
+  public boolean isGrabbing() {
+    return isGrabbing;
+  }
+
+  public boolean isHoldingObject() {
+    return heldObject != null;
+  }
+
+  public Entity getHeldObject() {
+    return this.heldObject;
+  }
+
+  public void startGrabbing() {
+    isGrabbing = true;
+    hand.setGrabbing(true);
+  }
+
+  public void grabObject(Entity entity) {
+    if (heldObject != null)
+      return; // Already holding something
+
+    this.heldObject = entity;
+
+    // --- MOMENTUM CONSERVATION ---
+    // Calculate the combined momentum before the grab
+    double momentumX = (this.mass * this.vx) + (entity.mass * entity.getVx());
+    double momentumY = (this.mass * this.vy) + (entity.mass * entity.getVy());
+
+    // Calculate the new total mass
+    double totalMass = this.mass + entity.mass;
+
+    // Calculate the new shared velocity
+    double finalVx = momentumX / totalMass;
+    double finalVy = momentumY / totalMass;
+
+    // Apply the new velocity to both the player and the grabbed object
+    this.setVx(finalVx);
+    this.setVy(finalVy);
+    entity.setVx(finalVx);
+    entity.setVy(finalVy);
+  }
+
+  public void releaseObject() {
+    this.isGrabbing = false;
+    hand.setGrabbing(false);
+    if (heldObject != null) {
+      // The object keeps the shared velocity when released
+      heldObject = null;
+    }
+  }
+
+  public void updateHand(double mouseX, double mouseY) {
+    double dx = mouseX - this.x;
+    double dy = mouseY - this.y;
+    double angle = Math.atan2(dy, dx);
+
+    this.hand.setX(this.x + HAND_ORBIT_RADIUS * Math.cos(angle));
+    this.hand.setY(this.y + HAND_ORBIT_RADIUS * Math.sin(angle));
   }
 
   private static Vector2D[] createCircleVertices(double radius, int sides) {
@@ -106,8 +178,12 @@ public class Player extends Entity {
     // If we are NOT dashing, apply normal movement physics
     if (!isDashing) {
       // 1. Apply acceleration from input
-      vx += inputAx * ACCELERATION * delta;
-      vy += inputAy * ACCELERATION * delta;
+
+      double currentMass = this.mass + (heldObject != null ? heldObject.mass : 0);
+      double currentAcceleration = ACCELERATION * (this.mass / currentMass);
+
+      vx += inputAx * currentAcceleration * delta;
+      vy += inputAy * currentAcceleration * delta;
 
       // 2. Apply friction (damping)
       vx *= DAMPING;
@@ -123,5 +199,14 @@ public class Player extends Entity {
 
     // Call the parent update method to apply final velocity to position
     super.update(delta);
+
+    if (heldObject != null) {
+      // Make the held object share our velocity and position
+      heldObject.setVx(this.vx);
+      heldObject.setVy(this.vy);
+      // This keeps the object "stuck" to the player visually
+      heldObject.x = this.x + (heldObject.x - this.x);
+      heldObject.y = this.y + (heldObject.y - this.y);
+    }
   }
 }
