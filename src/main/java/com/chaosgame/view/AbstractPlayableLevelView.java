@@ -68,6 +68,12 @@ public abstract class AbstractPlayableLevelView {
       mouseY = event.getSceneY();
     });
 
+    // This handles mouse movement when a button IS pressed
+    scene.setOnMouseDragged(event -> {
+      mouseX = event.getSceneX();
+      mouseY = event.getSceneY();
+    });
+
     scene.setOnKeyPressed(event -> pressedKeys.add(event.getCode()));
     scene.setOnKeyReleased(event -> pressedKeys.remove(event.getCode()));
 

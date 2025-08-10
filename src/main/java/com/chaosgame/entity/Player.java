@@ -204,7 +204,6 @@ public class Player extends Entity {
     // Call the parent update method to apply final velocity to position
     super.update(delta);
 
-    // in Player.java, inside update(double delta)
     if (heldObject != null) {
       // Make the held object share our velocity and position
       heldObject.setVx(this.vx);
