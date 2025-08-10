@@ -14,6 +14,8 @@ public class Player extends Entity {
   private static final double HAND_ORBIT_RADIUS = 30;
   private boolean isGrabbing = false;
   private Entity heldObject = null;
+  private double heldObjectOffsetX;
+  private double heldObjectOffsetY;
 
   // --- New Physics Constants ---
   private static final double ACCELERATION = 2000; // How fast the player speeds up
@@ -65,6 +67,8 @@ public class Player extends Entity {
       return; // Already holding something
 
     this.heldObject = entity;
+    this.heldObjectOffsetX = entity.getX() - this.x;
+    this.heldObjectOffsetY = entity.getY() - this.y;
 
     // --- MOMENTUM CONSERVATION ---
     // Calculate the combined momentum before the grab
@@ -200,13 +204,14 @@ public class Player extends Entity {
     // Call the parent update method to apply final velocity to position
     super.update(delta);
 
+    // in Player.java, inside update(double delta)
     if (heldObject != null) {
       // Make the held object share our velocity and position
       heldObject.setVx(this.vx);
       heldObject.setVy(this.vy);
       // This keeps the object "stuck" to the player visually
-      heldObject.x = this.x + (heldObject.x - this.x);
-      heldObject.y = this.y + (heldObject.y - this.y);
+      heldObject.setX(this.x + heldObjectOffsetX);
+      heldObject.setY(this.y + heldObjectOffsetY);
     }
   }
 }
