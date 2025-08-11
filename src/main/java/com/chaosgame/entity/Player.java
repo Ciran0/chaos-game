@@ -14,8 +14,9 @@ public class Player extends Entity {
   private static final double HAND_ORBIT_RADIUS = 30;
   private boolean isGrabbing = false;
   private Entity heldObject = null;
-  private double heldObjectOffsetX;
-  private double heldObjectOffsetY;
+  private Vector2D grabPoint; // The point on the object we grabbed, relative to its center
+  private static final double SPRING_STIFFNESS = 2000; // How "strong" the grab is
+  private static final double SPRING_DAMPING = 100; // Prevents the object from oscillating wildly
 
   // --- New Physics Constants ---
   private static final double ACCELERATION = 2000; // How fast the player speeds up
@@ -67,34 +68,16 @@ public class Player extends Entity {
       return; // Already holding something
 
     this.heldObject = entity;
-    this.heldObjectOffsetX = entity.getX() - this.x;
-    this.heldObjectOffsetY = entity.getY() - this.y;
-
-    // --- MOMENTUM CONSERVATION ---
-    // Calculate the combined momentum before the grab
-    double momentumX = (this.mass * this.vx) + (entity.mass * entity.getVx());
-    double momentumY = (this.mass * this.vy) + (entity.mass * entity.getVy());
-
-    // Calculate the new total mass
-    double totalMass = this.mass + entity.mass;
-
-    // Calculate the new shared velocity
-    double finalVx = momentumX / totalMass;
-    double finalVy = momentumY / totalMass;
-
-    // Apply the new velocity to both the player and the grabbed object
-    this.setVx(finalVx);
-    this.setVy(finalVy);
-    entity.setVx(finalVx);
-    entity.setVy(finalVy);
+    // Calculate where on the object we grabbed it, relative to the object's center
+    this.grabPoint = new Vector2D(hand.getX() - entity.getX(), hand.getY() - entity.getY());
   }
 
   public void releaseObject() {
     this.isGrabbing = false;
     hand.setGrabbing(false);
     if (heldObject != null) {
-      // The object keeps the shared velocity when released
       heldObject = null;
+      grabPoint = null;
     }
   }
 
@@ -165,6 +148,16 @@ public class Player extends Entity {
     }
   }
 
+  public void applyForceFromCenter(Vector2D force, double delta) {
+    // This helper ignores torque for the player for simplicity.
+    if (this.mass == 0)
+      return;
+    double ax = force.x / this.mass;
+    double ay = force.y / this.mass;
+    this.vx += ax * delta;
+    this.vy += ay * delta;
+  }
+
   @Override
   public void update(double delta) {
     // --- Timers ---
@@ -204,13 +197,35 @@ public class Player extends Entity {
     // Call the parent update method to apply final velocity to position
     super.update(delta);
 
+    // --- Spring Grabbing Physics ---
     if (heldObject != null) {
-      // Make the held object share our velocity and position
-      heldObject.setVx(this.vx);
-      heldObject.setVy(this.vy);
-      // This keeps the object "stuck" to the player visually
-      heldObject.setX(this.x + heldObjectOffsetX);
-      heldObject.setY(this.y + heldObjectOffsetY);
+      // 1. Calculate the target position for the grab point (which is the hand's
+      // position)
+      Vector2D handPosition = new Vector2D(hand.getX(), hand.getY());
+
+      // 2. Calculate the current world position of the grab point on the object
+      Vector2D currentGrabPointPosition = new Vector2D(heldObject.getX() + grabPoint.x,
+          heldObject.getY() + grabPoint.y);
+
+      // 3. Calculate the displacement vector (the "stretch" of the spring)
+      Vector2D displacement = currentGrabPointPosition.subtract(handPosition);
+
+      // 4. Calculate the spring force (Hooke's Law: F = -kx)
+      Vector2D springForce = displacement.scale(-SPRING_STIFFNESS);
+
+      // 5. Calculate the damping force (to reduce oscillation)
+      Vector2D relativeVelocity = new Vector2D(heldObject.getVx() - this.vx, heldObject.getVy() - this.vy);
+      Vector2D dampingForce = relativeVelocity.scale(-SPRING_DAMPING);
+
+      // 6. Calculate the total force of the grab
+      Vector2D totalForce = springForce.add(dampingForce);
+
+      // 7. Apply the forces!
+      // The object gets the full force.
+      heldObject.applyForce(totalForce, grabPoint, delta);
+      // The player gets the equal and opposite force (Newton's Third Law).
+      heldObject.angularVelocity *= 0.82;
+      this.applyForceFromCenter(totalForce.scale(-1), delta);
     }
   }
 }

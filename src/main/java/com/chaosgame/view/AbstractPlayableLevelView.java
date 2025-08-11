@@ -152,10 +152,6 @@ public abstract class AbstractPlayableLevelView {
         if (!e1.isPhysical || !e2.isPhysical) {
           continue;
         }
-        if (player.isHoldingObject()
-            && ((e1 == player && e2 == player.getHeldObject()) || (e2 == player && e1 == player.getHeldObject()))) {
-          continue;
-        }
 
         Physics.CollisionResult result = Physics.checkCollision(e1, e2);
         if (result.isColliding) {

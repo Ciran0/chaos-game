@@ -6,16 +6,35 @@ import javafx.scene.shape.Rectangle;
 
 public class Crate extends Entity {
 
-  public Crate(int x, int y) {
-    super(createCenteredRect(), 50.0, createBoxVertices(40, 40));
+  // A constant to define the "density" of our crates.
+  // This makes the mass calculation clear and easy to tweak.
+  private static final double DENSITY = 0.02; // kg per pixel-squared, for example
+
+  public Crate(int x, int y, double side) {
+    // The super() call is now much easier to read.
+    super(createCenteredRect(side), calculateMass(side), createBoxVertices(side, side));
     this.x = x;
     this.y = y;
   }
 
-  private static Rectangle createCenteredRect() {
-    Rectangle rect = new Rectangle(40, 40, Color.SADDLEBROWN);
-    rect.setX(-20);
-    rect.setY(-20);
+  /**
+   * Calculates the mass of the crate based on its area (as a proxy for volume in
+   * 2D)
+   * and its density.
+   */
+  private static double calculateMass(double side) {
+    double area = side * side;
+    return area * DENSITY;
+  }
+
+  /**
+   * Creates a Rectangle view for the crate, centered at its origin (0,0).
+   * The parameter name is changed from 'mass' to 'side' to be more accurate.
+   */
+  private static Rectangle createCenteredRect(double side) {
+    Rectangle rect = new Rectangle(side, side, Color.SADDLEBROWN);
+    rect.setX(-side / 2);
+    rect.setY(-side / 2);
     return rect;
   }
 

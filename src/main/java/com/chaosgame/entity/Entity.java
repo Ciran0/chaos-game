@@ -9,6 +9,10 @@ public abstract class Entity {
 
   private static final double GLOBAL_FRICTION = 0.98;
 
+  public double angle = 0; // in radians
+  protected double angularVelocity = 0; // in radians per second
+  private static final double ROTATIONAL_FRICTION = 0.95;
+
   public double mass;
   protected Vector2D[] vertices;
   public boolean isPhysical;
@@ -19,6 +23,31 @@ public abstract class Entity {
     this.mass = mass;
     this.vertices = vertices;
     this.isPhysical = true;
+  }
+
+  public void applyForce(Vector2D force, Vector2D pointOfApplication, double delta) {
+    if (this.mass == 0)
+      return; // Can't apply force to a massless object
+
+    // --- Linear Force ---
+    // F = ma -> a = F/m -> v_change = (F/m) * t
+    double ax = force.x / this.mass;
+    double ay = force.y / this.mass;
+    this.vx += ax * delta;
+    this.vy += ay * delta;
+
+    // --- Rotational Force (Torque) ---
+    // Torque = r x F (cross product of lever arm and force)
+    double leverArmX = pointOfApplication.x;
+    double leverArmY = pointOfApplication.y;
+    double torque = leverArmX * force.y - leverArmY * force.x; // 2D cross product
+
+    // For a simple box, moment of inertia is roughly (mass * (width^2 + height^2))
+    // / 12
+    // We'll approximate with a simple inertia value for now.
+    double momentOfInertia = this.mass * 500; // This is a magic number, tweak for effect!
+    double angularAcceleration = torque / momentOfInertia;
+    this.angularVelocity += angularAcceleration * delta;
   }
 
   // Getters and Setters
@@ -62,11 +91,15 @@ public abstract class Entity {
     if (!(this instanceof Player)) {
       vx *= GLOBAL_FRICTION;
       vy *= GLOBAL_FRICTION;
+      angularVelocity *= ROTATIONAL_FRICTION; // Apply rotational friction
     }
     x += vx * delta;
     y += vy * delta;
+    angle += angularVelocity * delta; // Update angle
+
     view.setTranslateX(x);
     view.setTranslateY(y);
+    view.setRotate(Math.toDegrees(angle)); // Apply rotation to the view
   }
 
   public Node getView() {
