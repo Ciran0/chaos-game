@@ -4,6 +4,7 @@ import com.chaosgame.ViewManager;
 import com.chaosgame.entity.Crate;
 import com.chaosgame.entity.Hand;
 import com.chaosgame.entity.Player;
+import com.chaosgame.entity.Wall;
 
 /**
  * A concrete implementation of a playable level.
@@ -29,5 +30,8 @@ public class GameView extends AbstractPlayableLevelView {
     addEntity(new Crate(200, 200, 25));
     addEntity(new Crate(1000, 500, 50));
     addEntity(new Crate(400, 600, 100));
+
+    addEntity(new Wall(0, 50, WIDTH * 2, 10));
+    addEntity(new Wall(0, 500, WIDTH * 2, 250));
   }
 }

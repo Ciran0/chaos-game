@@ -5,6 +5,7 @@ import com.chaosgame.Vector2D;
 import com.chaosgame.ViewManager;
 import com.chaosgame.entity.Entity;
 import com.chaosgame.entity.Hand;
+import com.chaosgame.entity.Wall;
 import com.chaosgame.entity.Player;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
@@ -168,17 +169,40 @@ public abstract class AbstractPlayableLevelView {
   }
 
   private void handleCollisionVelocity(Entity a, Entity b) {
+    // A restitution value of < 1 makes collisions "lossy" (less bouncy).
+    // A value of 1 is a perfect bounce.
+    final double restitution = 0.6;
+
+    // --- Special case for wall collisions ---
+    if (a instanceof Wall) {
+      // 'a' is the wall, so we only modify 'b'
+      // We reflect b's velocity and apply restitution
+      b.setVx(b.getVx() * -restitution);
+      b.setVy(b.getVy() * -restitution);
+      return;
+    } else if (b instanceof Wall) {
+      // 'b' is the wall, so we only modify 'a'
+      a.setVx(a.getVx() * -restitution);
+      a.setVy(a.getVy() * -restitution);
+      return;
+    }
+
+    // --- Default case for two movable objects ---
     double dx = b.getX() - a.getX();
     double dy = b.getY() - a.getY();
     double distance = Math.sqrt(dx * dx + dy * dy);
     if (distance == 0)
       return;
+
     double normalX = dx / distance;
     double normalY = dy / distance;
+
     double p1 = a.getVx() * normalX + a.getVy() * normalY;
     double p2 = b.getVx() * normalX + b.getVy() * normalY;
+
     double newP1 = (p1 * (a.mass - b.mass) + 2 * b.mass * p2) / (a.mass + b.mass);
     double newP2 = (p1 * 2 * a.mass - p2 * (a.mass - b.mass)) / (a.mass + b.mass);
+
     a.setVx(a.getVx() + (newP1 - p1) * normalX);
     a.setVy(a.getVy() + (newP1 - p1) * normalY);
     b.setVx(b.getVx() + (newP2 - p2) * normalX);
