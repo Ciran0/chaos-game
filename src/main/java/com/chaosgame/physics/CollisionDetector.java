@@ -1,8 +1,10 @@
-package com.chaosgame;
+// src/main/java/com/chaosgame/physics/CollisionDetector.java
+package com.chaosgame.physics;
 
+import com.chaosgame.Vector2D;
 import com.chaosgame.entity.Entity;
 
-public class Physics {
+public class CollisionDetector {
 
   /**
    * A helper class to store the result of a collision check.
@@ -38,10 +40,7 @@ public class Physics {
   }
 
   /**
-   * Checks for collision between two entities using the Separating Axis Theorem
-   * (SAT).
-   * 
-   * @return A CollisionResult containing whether they collide and the MTV.
+   * Checks for collision between two entities using the Separating Axis Theorem.
    */
   public static CollisionResult checkCollision(Entity a, Entity b) {
     double minOverlap = Double.MAX_VALUE;
@@ -87,7 +86,6 @@ public class Physics {
     return new CollisionResult(true, mtv);
   }
 
-  // Helper to get all unique axes (normals) from two entities
   private static Vector2D[] getAxes(Entity a, Entity b) {
     Vector2D[] axesA = getEntityAxes(a);
     Vector2D[] axesB = getEntityAxes(b);
@@ -97,7 +95,6 @@ public class Physics {
     return axes;
   }
 
-  // Helper to get the axes for a single entity
   private static Vector2D[] getEntityAxes(Entity entity) {
     Vector2D[] vertices = entity.getVertices();
     Vector2D[] axes = new Vector2D[vertices.length];
@@ -110,7 +107,6 @@ public class Physics {
     return axes;
   }
 
-  // Helper to project an entity's vertices onto an axis
   private static Projection project(Entity entity, Vector2D axis) {
     double min = Double.MAX_VALUE;
     double max = Double.MIN_VALUE;
@@ -127,4 +123,5 @@ public class Physics {
     }
     return new Projection(min, max);
   }
+
 }

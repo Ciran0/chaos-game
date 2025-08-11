@@ -1,6 +1,7 @@
 package com.chaosgame.view;
 
-import com.chaosgame.Physics;
+import com.chaosgame.physics.CollisionDetector;
+import com.chaosgame.physics.PhysicsEngine;
 import com.chaosgame.Vector2D;
 import com.chaosgame.ViewManager;
 import com.chaosgame.entity.Entity;
@@ -32,6 +33,7 @@ public abstract class AbstractPlayableLevelView {
   protected AnimationTimer gameLoop;
   protected List<Entity> entities = new ArrayList<>();
   protected Player player;
+  protected PhysicsEngine physicsEngine;
 
   // Input State
   private long lastUpdate = 0;
@@ -44,6 +46,7 @@ public abstract class AbstractPlayableLevelView {
   public static final int HEIGHT = 720;
 
   public AbstractPlayableLevelView(ViewManager viewManager) {
+    this.physicsEngine = new PhysicsEngine();
     this.viewManager = viewManager;
     this.root = new Pane();
     this.root.setStyle("-fx-background-color: #1a1a1a;");
@@ -126,86 +129,24 @@ public abstract class AbstractPlayableLevelView {
       entity.update(delta);
     }
 
-    for (int i = 0; i < 2; i++) {
-      checkCollisions();
-    }
+    handleGrabbing();
+    physicsEngine.update(entities);
+
   }
 
-  private void checkCollisions() {
+  private void handleGrabbing() {
     if (player.isGrabbing() && !player.isHoldingObject()) {
       for (Entity entity : entities) {
         if (entity instanceof Player || !entity.isPhysical)
           continue;
-        Physics.CollisionResult grabResult = Physics.checkCollision(player.getHand(), entity);
+
+        // We still use the detector directly for this specific case
+        CollisionDetector.CollisionResult grabResult = CollisionDetector.checkCollision(player.getHand(), entity);
         if (grabResult.isColliding) {
           player.grabObject(entity);
           break;
         }
       }
     }
-
-    for (int i = 0; i < entities.size(); i++) {
-      for (int j = i + 1; j < entities.size(); j++) {
-        Entity e1 = entities.get(i);
-        Entity e2 = entities.get(j);
-
-        // This is the corrected logic that fixes the hand rotation bug
-        if (!e1.isPhysical || !e2.isPhysical) {
-          continue;
-        }
-
-        Physics.CollisionResult result = Physics.checkCollision(e1, e2);
-        if (result.isColliding) {
-          Vector2D mtv = result.mtv;
-          double totalMass = e1.mass + e2.mass;
-          e1.setX(e1.getX() - mtv.x * (e2.mass / totalMass));
-          e1.setY(e1.getY() - mtv.y * (e2.mass / totalMass));
-          e2.setX(e2.getX() + mtv.x * (e1.mass / totalMass));
-          e2.setY(e2.getY() + mtv.y * (e1.mass / totalMass));
-          handleCollisionVelocity(e1, e2);
-        }
-      }
-    }
-  }
-
-  private void handleCollisionVelocity(Entity a, Entity b) {
-    // A restitution value of < 1 makes collisions "lossy" (less bouncy).
-    // A value of 1 is a perfect bounce.
-    final double restitution = 0.6;
-
-    // --- Special case for wall collisions ---
-    if (a instanceof Wall) {
-      // 'a' is the wall, so we only modify 'b'
-      // We reflect b's velocity and apply restitution
-      b.setVx(b.getVx() * -restitution);
-      b.setVy(b.getVy() * -restitution);
-      return;
-    } else if (b instanceof Wall) {
-      // 'b' is the wall, so we only modify 'a'
-      a.setVx(a.getVx() * -restitution);
-      a.setVy(a.getVy() * -restitution);
-      return;
-    }
-
-    // --- Default case for two movable objects ---
-    double dx = b.getX() - a.getX();
-    double dy = b.getY() - a.getY();
-    double distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance == 0)
-      return;
-
-    double normalX = dx / distance;
-    double normalY = dy / distance;
-
-    double p1 = a.getVx() * normalX + a.getVy() * normalY;
-    double p2 = b.getVx() * normalX + b.getVy() * normalY;
-
-    double newP1 = (p1 * (a.mass - b.mass) + 2 * b.mass * p2) / (a.mass + b.mass);
-    double newP2 = (p1 * 2 * a.mass - p2 * (a.mass - b.mass)) / (a.mass + b.mass);
-
-    a.setVx(a.getVx() + (newP1 - p1) * normalX);
-    a.setVy(a.getVy() + (newP1 - p1) * normalY);
-    b.setVx(b.getVx() + (newP2 - p2) * normalX);
-    b.setVy(b.getVy() + (newP2 - p2) * normalY);
   }
 }
