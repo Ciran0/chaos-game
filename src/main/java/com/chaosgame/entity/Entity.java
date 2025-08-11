@@ -50,6 +50,24 @@ public abstract class Entity {
     this.angularVelocity += angularAcceleration * delta;
   }
 
+  /**
+   * Calculates the radius of a circle that would enclose all vertices of the
+   * entity.
+   * This is useful for simplified, broad-phase collision checks.
+   * 
+   * @return The distance of the furthest vertex from the entity's local origin.
+   */
+  public double getBoundingRadius() {
+    double maxSquaredDist = 0;
+    for (Vector2D vertex : this.vertices) {
+      double sqDist = vertex.x * vertex.x + vertex.y * vertex.y;
+      if (sqDist > maxSquaredDist) {
+        maxSquaredDist = sqDist;
+      }
+    }
+    return Math.sqrt(maxSquaredDist);
+  }
+
   // Getters and Setters
   public double getX() {
     return x;
@@ -87,19 +105,22 @@ public abstract class Entity {
     return vertices;
   }
 
-  public void update(double delta) {
+  public void updatePhysics(double delta) {
     if (!(this instanceof Player)) {
       vx *= GLOBAL_FRICTION;
       vy *= GLOBAL_FRICTION;
       angularVelocity *= ROTATIONAL_FRICTION; // Apply rotational friction
     }
+  }
+
+  public void updatePosition(double delta) {
     x += vx * delta;
     y += vy * delta;
-    angle += angularVelocity * delta; // Update angle
+    angle += angularVelocity * delta;
 
     view.setTranslateX(x);
     view.setTranslateY(y);
-    view.setRotate(Math.toDegrees(angle)); // Apply rotation to the view
+    view.setRotate(Math.toDegrees(angle));
   }
 
   public Node getView() {

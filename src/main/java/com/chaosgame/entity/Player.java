@@ -159,7 +159,7 @@ public class Player extends Entity {
   }
 
   @Override
-  public void update(double delta) {
+  public void updatePhysics(double delta) {
     // --- Timers ---
     if (dashCooldownTimer > 0) {
       dashCooldownTimer -= delta;
@@ -193,9 +193,6 @@ public class Player extends Entity {
         vy = (vy / currentSpeed) * MAX_SPEED;
       }
     }
-
-    // Call the parent update method to apply final velocity to position
-    super.update(delta);
 
     // --- Spring Grabbing Physics ---
     if (heldObject != null) {

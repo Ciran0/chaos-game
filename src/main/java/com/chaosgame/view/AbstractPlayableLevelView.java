@@ -124,13 +124,10 @@ public abstract class AbstractPlayableLevelView {
   private void update(double delta) {
     player.handleInput(pressedKeys);
     player.updateHand(mouseX, mouseY);
-
-    for (Entity entity : entities) {
-      entity.update(delta);
-    }
+    player.updatePhysics(delta);
 
     handleGrabbing();
-    physicsEngine.update(entities);
+    physicsEngine.update(entities, delta);
 
   }
 

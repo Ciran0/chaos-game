@@ -40,6 +40,73 @@ public class CollisionDetector {
   }
 
   /**
+   * Calculates the Time of Impact (TOI) between two convex polygons using the
+   * Separating Axis Theorem.
+   * This version accounts for linear velocity but not angular velocity.
+   * 
+   * @return The time 't' (from 0.0 to timeLimit) at which the objects will first
+   *         touch,
+   *         or a value > timeLimit if they do not collide within the time period.
+   */
+  public static double findTimeOfImpact(Entity a, Entity b, double timeLimit) {
+    Vector2D[] axes = getAxes(a, b);
+    double toi = 0.0;
+    double timeOfSeparation = Double.MAX_VALUE;
+
+    Vector2D relativeVelocity = new Vector2D(b.getVx() - a.getVx(), b.getVy() - a.getVy());
+
+    for (Vector2D axis : axes) {
+      // Project the shapes onto the axis
+      Projection pA = project(a, axis);
+      Projection pB = project(b, axis);
+
+      double projectedVelocity = relativeVelocity.dot(axis);
+
+      // If the projections do not overlap, they are separated on this axis.
+      if (!pA.overlaps(pB)) {
+        // If they are not moving towards each other on this axis, there will be no
+        // collision.
+        // This is a separating axis.
+        if (projectedVelocity >= 0) {
+          return Double.MAX_VALUE;
+        }
+
+        // Calculate the time it takes for them to meet on this axis.
+        double dist = pA.min > pB.max ? pA.min - pB.max : pB.min - pA.max;
+        double t = dist / -projectedVelocity;
+
+        // We are looking for the LATEST time of entry into collision.
+        if (t > toi) {
+          toi = t;
+        }
+      }
+
+      // Calculate the time it takes for them to separate on this axis.
+      double overlap = pA.getOverlap(pB);
+      // If they are moving towards each other, time of separation is based on how
+      // long it takes to cross the overlap.
+      if (projectedVelocity < 0) {
+        double t = overlap / -projectedVelocity;
+        timeOfSeparation = Math.min(timeOfSeparation, t);
+      }
+      // If they are moving apart, calculate time of separation.
+      else if (projectedVelocity > 0) {
+        double dist = pA.min > pB.max ? pA.min - pB.max : pB.min - pA.max;
+        double t = (overlap + dist) / projectedVelocity;
+        timeOfSeparation = Math.min(timeOfSeparation, t);
+      }
+
+      // If the time of first impact is greater than the time of first separation,
+      // or if it's outside our frame's time limit, they cannot collide.
+      if (toi > timeOfSeparation || toi > timeLimit) {
+        return Double.MAX_VALUE;
+      }
+    }
+
+    return toi;
+  }
+
+  /**
    * Checks for collision between two entities using the Separating Axis Theorem.
    */
   public static CollisionResult checkCollision(Entity a, Entity b) {

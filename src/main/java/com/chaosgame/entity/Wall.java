@@ -17,8 +17,10 @@ public class Wall extends Entity {
 
   // Walls should never move, so we override the update method to do nothing.
   @Override
-  public void update(double delta) {
-    // Intentionally left blank.
+  public void updatePhysics(double delta) {
+  }
+
+  public void updatePosition(double delta) {
   }
 
   // A helper to define the vertices for a box shape
