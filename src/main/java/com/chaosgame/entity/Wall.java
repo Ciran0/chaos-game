@@ -34,4 +34,8 @@ public class Wall extends Entity {
         new Vector2D(0, height) // Bottom-left
     };
   }
+
+  public String toString() {
+    return "Wall";
+  }
 }

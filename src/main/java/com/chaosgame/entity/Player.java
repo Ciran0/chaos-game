@@ -225,4 +225,8 @@ public class Player extends Entity {
       this.applyForceFromCenter(totalForce.scale(-1), delta);
     }
   }
+
+  public String toString() {
+    return "Player";
+  }
 }

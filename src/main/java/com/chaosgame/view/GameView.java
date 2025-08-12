@@ -28,7 +28,6 @@ public class GameView extends AbstractPlayableLevelView {
 
     // Add some crates for this specific level
     addEntity(new Crate(200, 200, 25));
-    addEntity(new Crate(1000, 500, 50));
 
     addEntity(new Wall(0, 50, WIDTH * 2, 10));
     addEntity(new Wall(0, 600, WIDTH * 2, 250));

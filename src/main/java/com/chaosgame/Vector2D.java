@@ -9,6 +9,10 @@ public class Vector2D {
     this.y = y;
   }
 
+  public String toString() {
+    return ("[" + this.x + ", " + this.y + "]");
+  }
+
   public Vector2D add(Vector2D other) {
     return new Vector2D(this.x + other.x, this.y + other.y);
   }

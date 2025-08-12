@@ -49,4 +49,8 @@ public class Crate extends Entity {
         new Vector2D(-halfWidth, halfHeight) // Bottom-left
     };
   }
+
+  public String toString() {
+    return ("Crate");
+  }
 }
