@@ -2,12 +2,14 @@
 package com.chaosgame.physics;
 
 import com.chaosgame.entity.Entity;
+import com.chaosgame.Vector2D;
 import java.util.List;
 
 public class PhysicsEngine {
 
-  private final CollisionResolver collisionResolver;
+  private CollisionResolver collisionResolver;
   private static final int MAX_SUB_STEPS = 5; // Prevents infinite loops
+  //
 
   public PhysicsEngine() {
     this.collisionResolver = new CollisionResolver();
@@ -38,7 +40,7 @@ public class PhysicsEngine {
 
           // Convert toi from being relative to the whole frame (0-1) to the remaining
           // time
-          double toi = CollisionDetector.findTimeOfImpact(e1, e2, 1.0) * remainingTime;
+          double toi = e1.collide(e2, remainingTime);
 
           if (toi < earliestToi) {
             earliestToi = toi;
@@ -51,43 +53,23 @@ public class PhysicsEngine {
       // --- Step 2: Move all entities forward by the calculated time ---
       double timeToSimulate = earliestToi;
       for (Entity entity : entities) {
-        entity.updatePosition(timeToSimulate); // We'll create this new method
+        entity.updatePosition(timeToSimulate);
       }
 
       // --- Step 3: If a collision was found, resolve it ---
       if (entityA != null) {
+        Vector2D mtv = entityA.checkCollision(entityB).mtv;
         collisionResolver.resolveVelocity(entityA, entityB);
+        collisionResolver.resolvePosition(entityA, entityB, mtv);
+        System.out.println(mtv.toString());
       }
 
       // --- Step 4: Reduce the remaining time ---
-      System.out.println(
-          String.format("Sub-step %d: remainingTime=%.4f, timeToSimulate=%.4f",
-              subSteps, remainingTime, earliestToi));
+      // System.out.println(
+      // String.format("Sub-step %d: remainingTime=%.4f, timeToSimulate=%.4f",
+      // subSteps, remainingTime, earliestToi));
       remainingTime -= timeToSimulate;
       subSteps++;
-    }
-
-    // Final discrete check for any lingering overlaps
-    checkForCollisions(entities);
-  }
-
-  private void checkForCollisions(List<Entity> entities) {
-    for (int i = 0; i < entities.size(); i++) {
-      for (int j = i + 1; j < entities.size(); j++) {
-        Entity e1 = entities.get(i);
-        Entity e2 = entities.get(j);
-
-        if (!e1.isPhysical || !e2.isPhysical) {
-          continue;
-        }
-
-        CollisionDetector.CollisionResult result = CollisionDetector.checkCollision(e1, e2);
-
-        if (result.isColliding) {
-          collisionResolver.resolvePosition(e1, e2, result.mtv);
-          collisionResolver.resolveVelocity(e1, e2);
-        }
-      }
     }
   }
 }

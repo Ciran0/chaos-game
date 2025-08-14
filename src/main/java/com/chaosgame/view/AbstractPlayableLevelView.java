@@ -1,6 +1,5 @@
 package com.chaosgame.view;
 
-import com.chaosgame.physics.CollisionDetector;
 import com.chaosgame.physics.PhysicsEngine;
 import com.chaosgame.Vector2D;
 import com.chaosgame.ViewManager;
@@ -137,12 +136,6 @@ public abstract class AbstractPlayableLevelView {
         if (entity instanceof Player || !entity.isPhysical)
           continue;
 
-        // We still use the detector directly for this specific case
-        CollisionDetector.CollisionResult grabResult = CollisionDetector.checkCollision(player.getHand(), entity);
-        if (grabResult.isColliding) {
-          player.grabObject(entity);
-          break;
-        }
       }
     }
   }
